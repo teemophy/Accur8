@@ -2,6 +2,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import vercel from 'vite-plugin-vercel';
+// Fix: Explicitly import process from node:process to resolve 'cwd' property missing on the global Process type
+import process from 'node:process';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
