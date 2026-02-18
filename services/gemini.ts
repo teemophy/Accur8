@@ -3,7 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { Market } from "../types";
 
 export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string> {
-  // Fix: Directly use process.env.API_KEY for initialization as required by guidelines
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const marketSummary = markets.map(m => (
@@ -11,32 +10,53 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
   )).join('\n');
 
   const prompt = `
-    As a world-class financial analyst specializing in prediction markets, analyze the following real-time data from PredictHub:
-    
-    Current Market Snapshots:
+    Analyze these prediction markets:
     ${marketSummary}
     
-    Provide a professional briefing covering:
-    1. Key Arbitrage Opportunities: Identify where the price gaps are largest and suggest why platforms might be diverging.
-    2. Sentiment Analysis: What does the consensus tell us about global expectations for these specific events?
-    3. Trading Strategy: A concise, high-level recommendation for professional event traders.
-    
-    Keep the tone sophisticated, data-driven, and brief (max 300 words).
+    Briefing covering:
+    1. Key Arb Ops
+    2. Sentiment
+    3. Strategy (Brief).
   `;
 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
+    });
+    return response.text || "No analysis available.";
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
+  const pricesStr = Object.entries(market.prices).map(([k, v]) => `${k}: ${v}%`).join(', ');
+
+  const prompt = `
+    Analyze the specific prediction market: "${market.question}"
+    Current spreads: ${pricesStr}
+    Consensus: ${market.consensus}%
+    Arb Gap: ${market.arbGap}%
+    
+    Provide a professional institutional-grade brief (under 100 words) on:
+    - Likely reason for the spread (liquidity vs news lag).
+    - Immediate risk factors.
+    - Confidence rating of the consensus.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
       config: {
-        temperature: 0.7,
-        topP: 0.9,
+        temperature: 0.2, // Keep it precise
       }
     });
-
-    return response.text || "No analysis available at this moment.";
+    return response.text || "Deep dive unavailable.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
     throw error;
   }
 }
