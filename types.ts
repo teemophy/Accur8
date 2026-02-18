@@ -1,8 +1,7 @@
-
 export enum TabType {
   LIVE = 'live',
   ACCURACY = 'accuracy',
-  PORTFOLIO = 'portfolio',
+  INTEGRATE = 'integrate',
   AI_INSIGHTS = 'ai-insights'
 }
 
