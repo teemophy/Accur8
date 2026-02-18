@@ -1,9 +1,8 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { Market } from "../types";
 
 export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   
   const marketSummary = markets.map(m => (
     `- ${m.question}: Consensus ${m.consensus}%, Arb Gap ${m.arbGap}%`
@@ -19,19 +18,16 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
     3. Strategy (Brief).
   `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
-    return response.text || "No analysis available.";
-  } catch (error) {
-    throw error;
-  }
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: prompt,
+  });
+  
+  return response.text || "No analysis available.";
 }
 
 export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
   
   const pricesStr = Object.entries(market.prices).map(([k, v]) => `${k}: ${v}%`).join(', ');
 
@@ -47,16 +43,13 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
     - Confidence rating of the consensus.
   `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: prompt,
-      config: {
-        temperature: 0.2, // Keep it precise
-      }
-    });
-    return response.text || "Deep dive unavailable.";
-  } catch (error) {
-    throw error;
-  }
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-pro-preview',
+    contents: prompt,
+    config: {
+      temperature: 0.2,
+    }
+  });
+  
+  return response.text || "Deep dive unavailable.";
 }
