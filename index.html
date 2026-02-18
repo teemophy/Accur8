@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PredictHub Terminal | Institutional Prediction Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,12 +14,14 @@
             background-color: #06080f;
             color: #e2e8f0;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
         ::-webkit-scrollbar {
             width: 4px;
+            height: 4px;
         }
         ::-webkit-scrollbar-track {
             background: #06080f;
@@ -28,16 +30,13 @@
             background: #1e293b;
             border-radius: 10px;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #334155;
+        .animate-marquee {
+            display: flex;
+            animation: marquee 40s linear infinite;
         }
         @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
-        }
-        .animate-marquee {
-            display: flex;
-            animation: marquee 40s linear infinite;
         }
         .glass-panel {
             background: rgba(17, 20, 29, 0.7);
@@ -70,6 +69,9 @@
             line-height: 1.4;
             border: 1px solid rgba(255,255,255,0.1);
             pointer-events: none;
+        }
+        @media (max-width: 768px) {
+            .mobile-hide { display: none; }
         }
     </style>
 <script type="importmap">
