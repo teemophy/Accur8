@@ -1,24 +1,28 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Bell, TrendingUp, Activity, BarChart3, 
   ShieldCheck, Zap, RefreshCcw, History, PieChart, 
   ArrowRight, ChevronRight, Trophy, Newspaper, 
-  ArrowUpRight, ArrowDownRight, Sparkles 
+  ArrowUpRight, ArrowDownRight, Sparkles, SlidersHorizontal, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabType, Market, Platform, MarketPrice } from './types';
 import { PLATFORMS, INITIAL_MARKETS, NEWS_FEED } from './constants';
 import { getGeminiMarketAnalysis } from './services/gemini';
 
-// Fix: Use MarketPrice type directly to solve index signature and type mismatch errors
+const STORAGE_KEYS = {
+  ACTIVE_TAB: 'ph_pref_active_tab',
+  SEARCH: 'ph_pref_search',
+  ARB_THRESHOLD: 'ph_pref_arb_threshold'
+};
+
 const calculateConsensus = (prices: MarketPrice) => {
   const vals = Object.values(prices).filter((v): v is number => v !== undefined);
   if (vals.length === 0) return 0;
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 };
 
-// Fix: Use MarketPrice type directly to solve index signature and type mismatch errors
 const calculateArb = (prices: MarketPrice) => {
   const vals = Object.values(prices).filter((v): v is number => v !== undefined);
   if (vals.length < 2) return 0;
@@ -26,11 +30,43 @@ const calculateArb = (prices: MarketPrice) => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>(TabType.LIVE);
-  const [search, setSearch] = useState("");
+  // Persistence Initialization
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB);
+    return (saved && Object.values(TabType).includes(saved as TabType)) ? (saved as TabType) : TabType.LIVE;
+  });
+  
+  const [search, setSearch] = useState(() => {
+    return localStorage.getItem(STORAGE_KEYS.SEARCH) || "";
+  });
+  
+  const [arbThreshold, setArbThreshold] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.ARB_THRESHOLD);
+    return saved ? parseInt(saved, 10) : 7;
+  });
+
   const [ticker, setTicker] = useState(0);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  
+  // States for Notification System
+  const [flashAlert, setFlashAlert] = useState(false);
+  const [executingTrade, setExecutingTrade] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const lastAlertId = useRef<string | null>(null);
+
+  // Persistence Syncing
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SEARCH, search);
+  }, [search]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.ARB_THRESHOLD, arbThreshold.toString());
+  }, [arbThreshold]);
 
   // Simulated real-time price ticks
   useEffect(() => {
@@ -39,15 +75,52 @@ export default function App() {
   }, []);
 
   const marketData = useMemo(() => {
-    return INITIAL_MARKETS.map(m => ({
-      ...m,
-      consensus: calculateConsensus(m.prices),
-      arbGap: calculateArb(m.prices)
-    })).filter(m => 
+    return INITIAL_MARKETS.map(m => {
+      // Simulate slight price movements every ticker cycle to trigger alerts
+      const prices = { ...m.prices };
+      if (ticker % 2 === 0) {
+        if (prices.polymarket) prices.polymarket += Math.floor(Math.random() * 3) - 1;
+        if (prices.kalshi) prices.kalshi += Math.floor(Math.random() * 3) - 1;
+      }
+      
+      return {
+        ...m,
+        prices,
+        consensus: calculateConsensus(prices),
+        arbGap: calculateArb(prices)
+      };
+    }).filter(m => 
       m.question.toLowerCase().includes(search.toLowerCase()) || 
       m.category.toLowerCase().includes(search.toLowerCase())
     );
   }, [ticker, search]);
+
+  // Find the most significant arbitrage opportunity
+  const activeAlertMarket = useMemo(() => {
+    const opportunities = marketData
+      .filter(m => (m.arbGap || 0) >= arbThreshold)
+      .sort((a, b) => (b.arbGap || 0) - (a.arbGap || 0));
+    return opportunities[0] || null;
+  }, [marketData, arbThreshold]);
+
+  // Trigger flash effect when a new significant alert is detected
+  useEffect(() => {
+    if (activeAlertMarket && activeAlertMarket.id !== lastAlertId.current) {
+      setFlashAlert(true);
+      const timer = setTimeout(() => setFlashAlert(false), 2000);
+      lastAlertId.current = activeAlertMarket.id;
+      return () => clearTimeout(timer);
+    }
+  }, [activeAlertMarket]);
+
+  const handleExecuteTrade = () => {
+    setExecutingTrade(true);
+    setTimeout(() => {
+      setExecutingTrade(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    }, 1500);
+  };
 
   const handleAiInsights = async () => {
     setActiveTab(TabType.AI_INSIGHTS);
@@ -98,12 +171,29 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-6">
+          {/* Threshold Control */}
+          <div className="hidden xl:flex items-center gap-4 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+            <SlidersHorizontal size={14} className="text-white/40" />
+            <div className="flex flex-col">
+              <span className="text-[8px] font-black text-white/30 uppercase tracking-tighter">Arb Alert Threshold</span>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="range" min="1" max="20" 
+                  value={arbThreshold} 
+                  onChange={(e) => setArbThreshold(Number(e.target.value))}
+                  className="w-24 accent-indigo-500 h-1 bg-white/10 rounded-full appearance-none cursor-pointer"
+                />
+                <span className="text-[10px] font-black text-indigo-400 min-w-[24px]">{arbThreshold}%</span>
+              </div>
+            </div>
+          </div>
+
           <div className="relative hidden md:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={16} />
             <input 
               type="text" 
-              placeholder="Search 12,000+ markets..." 
-              className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-[11px] w-72 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+              placeholder="Search markets..." 
+              className="bg-white/5 border border-white/10 rounded-full py-2 pl-10 pr-4 text-[11px] w-56 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -117,7 +207,7 @@ export default function App() {
 
       <div className="max-w-[1600px] mx-auto p-6 grid grid-cols-12 gap-6 pb-24">
         
-        {/* 2. LEFT SIDEBAR: Platform Infrastructure */}
+        {/* 2. LEFT SIDEBAR */}
         <aside className="col-span-12 lg:col-span-3 space-y-6">
           <div className="bg-[#11141d] border border-white/10 rounded-2xl p-5 shadow-xl">
             <div className="flex justify-between items-center mb-6">
@@ -160,70 +250,65 @@ export default function App() {
               ))}
             </div>
           </div>
-
-          <div className="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={16} className="text-indigo-400" />
-              <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Market of the Day</h4>
-            </div>
-            <p className="text-sm font-bold text-white mb-2 leading-tight">Will the S&P 500 close above 6,200 this week?</p>
-            <div className="flex justify-between items-end">
-              <div>
-                <p className="text-[9px] text-white/40 uppercase font-black">Consensus</p>
-                <p className="text-xl font-black text-indigo-400">71%</p>
-              </div>
-              <button className="text-[10px] font-black bg-white text-black px-3 py-1.5 rounded-lg hover:bg-indigo-400 hover:text-white transition-colors">TRADE</button>
-            </div>
-          </div>
         </aside>
 
         {/* 3. MAIN TERMINAL */}
         <main className="col-span-12 lg:col-span-9 space-y-6">
           
-          {/* Header Stats */}
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Consensus Index", val: "68.2", sub: "+1.2% Trend", icon: Activity, color: "#6366f1" },
-              { label: "Aggregate Volume", val: "$44.2B", sub: "Last 30 Days", icon: BarChart3, color: "#10b981" },
-              { label: "Regulatory Signal", val: "Stable", sub: "CFTC Outlook", icon: ShieldCheck, color: "#3b82f6" },
-              { label: "Arb Gaps Found", val: "14", sub: "High Confidence", icon: Zap, color: "#f59e0b" },
-            ].map((s, i) => (
-              <div key={i} className="bg-[#11141d] border border-white/5 p-4 rounded-2xl shadow-lg">
-                <div className="flex justify-between items-start mb-2">
-                  <s.icon size={16} style={{ color: s.color }} className="opacity-70" />
-                  <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.1em]">{s.label}</span>
-                </div>
-                <div className="text-xl font-black text-white">{s.val}</div>
-                <div className="text-[9px] text-white/30 font-bold mt-1 uppercase tracking-tighter">{s.sub}</div>
-              </div>
-            ))}
-          </section>
-
           <AnimatePresence mode="wait">
             {activeTab === TabType.LIVE && (
               <motion.div 
                 key="live" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
                 className="space-y-6"
               >
-                {/* Arbitrage Alert Engine */}
-                <div className="bg-indigo-600/20 border border-indigo-500/30 p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between group overflow-hidden relative gap-4">
+                {/* Dynamic Arbitrage Alert Engine */}
+                <motion.div 
+                  animate={{ 
+                    backgroundColor: flashAlert ? 'rgba(99, 102, 241, 0.4)' : 'rgba(99, 102, 241, 0.1)',
+                    borderColor: flashAlert ? 'rgba(99, 102, 241, 0.8)' : 'rgba(99, 102, 241, 0.2)'
+                  }}
+                  className={`border p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between group overflow-hidden relative gap-4 transition-colors duration-500 ${!activeAlertMarket ? 'opacity-50 grayscale' : ''}`}
+                >
                   <div className="absolute top-0 right-0 p-8 bg-indigo-500/10 rounded-full blur-3xl -mr-8 -mt-8" />
                   <div className="flex items-center gap-4 relative z-10">
-                    <div className="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-600/40 animate-pulse">
-                      <Zap size={20} className="text-white fill-white" />
+                    <div className={`p-2.5 rounded-xl shadow-lg transition-all ${activeAlertMarket ? 'bg-indigo-600 shadow-indigo-600/40 animate-pulse' : 'bg-white/5 shadow-none'}`}>
+                      <Zap size={20} className={activeAlertMarket ? 'text-white fill-white' : 'text-white/20'} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Arbitrage Alert</span>
-                        <span className="bg-indigo-600 text-[8px] font-black px-1.5 py-0.5 rounded text-white tracking-widest uppercase">7% Spread</span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">
+                          {activeAlertMarket ? 'High Divergence Detected' : 'No Critical Spreads'}
+                        </span>
+                        {activeAlertMarket && (
+                          <span className="bg-indigo-600 text-[8px] font-black px-1.5 py-0.5 rounded text-white tracking-widest uppercase">
+                            {activeAlertMarket.arbGap}% Spread
+                          </span>
+                        )}
                       </div>
-                      <p className="text-sm font-bold text-white tracking-tight">Price divergence detected on Fed Rate Decision between Kalshi & Polymarket.</p>
+                      <p className="text-sm font-bold text-white tracking-tight leading-tight max-w-xl">
+                        {activeAlertMarket 
+                          ? `Price divergence on "${activeAlertMarket.question}" exceeds ${arbThreshold}% threshold.` 
+                          : `Currently scanning ${marketData.length} markets for opportunities above ${arbThreshold}%.`}
+                      </p>
                     </div>
                   </div>
-                  <button className="relative z-10 bg-white text-black font-black text-[10px] px-5 py-2.5 rounded-xl hover:bg-indigo-400 hover:text-white transition-all tracking-widest uppercase whitespace-nowrap">
-                    Execute Trade
-                  </button>
-                </div>
+                  
+                  {activeAlertMarket && (
+                    <button 
+                      onClick={handleExecuteTrade}
+                      disabled={executingTrade}
+                      className="relative z-10 bg-white text-black font-black text-[10px] px-6 py-3 rounded-xl hover:bg-indigo-400 hover:text-white transition-all tracking-widest uppercase whitespace-nowrap flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+                    >
+                      {executingTrade ? (
+                        <>
+                          <RefreshCcw size={12} className="animate-spin" /> EXECUTING...
+                        </>
+                      ) : (
+                        'Execute Trade'
+                      )}
+                    </button>
+                  )}
+                </motion.div>
 
                 {/* Main Comparison Engine */}
                 <div className="bg-[#11141d] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
@@ -247,9 +332,9 @@ export default function App() {
                         <tr className="bg-white/[0.02]">
                           <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left">Market Event</th>
                           <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left">Consensus</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left">Polymarket</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left">Kalshi</th>
-                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left">PredictIt</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left text-center">Poly</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left text-center">Kalshi</th>
+                          <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left text-center">PredIt</th>
                           <th className="px-6 py-4 text-[10px] font-black text-white/40 uppercase tracking-widest text-left text-right">Arb Gap</th>
                         </tr>
                       </thead>
@@ -275,23 +360,18 @@ export default function App() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80">{m.prices.polymarket ?? '--'}¢</td>
-                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80">{m.prices.kalshi ?? '--'}¢</td>
-                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80">{m.prices.predictit ?? '--'}¢</td>
+                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80 text-center">{m.prices.polymarket ?? '--'}¢</td>
+                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80 text-center">{m.prices.kalshi ?? '--'}¢</td>
+                            <td className="px-6 py-5 text-sm border-t border-white/5 font-mono font-bold text-white/80 text-center">{m.prices.predictit ?? '--'}¢</td>
                             <td className="px-6 py-5 text-sm border-t border-white/5 text-right">
-                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border ${m.arbGap! > 5 ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-white/5 text-white/30 border-white/10'}`}>
-                                {m.arbGap! > 5 && <Zap size={10} className="fill-emerald-500" />} {m.arbGap}% GAP
+                              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black border transition-all ${m.arbGap! >= arbThreshold ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]' : 'bg-white/5 text-white/30 border-white/10'}`}>
+                                {m.arbGap! >= arbThreshold && <Zap size={10} className="fill-emerald-500" />} {m.arbGap}% GAP
                               </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  </div>
-                  <div className="p-4 text-center border-t border-white/5 bg-white/[0.01]">
-                    <button className="text-[10px] font-black text-white/20 hover:text-indigo-400 transition-colors uppercase tracking-[0.2em] flex items-center gap-2 mx-auto">
-                      Load All Open Markets <ChevronRight size={14} />
-                    </button>
                   </div>
                 </div>
               </motion.div>
@@ -325,19 +405,10 @@ export default function App() {
                     {aiAnalysis ? (
                       <div className="whitespace-pre-wrap font-medium">{aiAnalysis}</div>
                     ) : (
-                      <p>Click "AI Insights" to generate a real-time analysis of the prediction landscape.</p>
+                      <p>Click "AI Insights" to generate a real-time analysis of the current market gaps.</p>
                     )}
                   </div>
                 )}
-
-                <div className="mt-12 flex justify-end">
-                  <button 
-                    onClick={() => { setAiAnalysis(null); handleAiInsights(); }}
-                    className="bg-white/5 border border-white/10 text-white font-black text-[10px] px-6 py-3 rounded-xl hover:bg-white/10 transition-all uppercase tracking-widest"
-                  >
-                    Refresh Analysis
-                  </button>
-                </div>
               </motion.div>
             )}
 
@@ -379,9 +450,6 @@ export default function App() {
                     <History size={32} className="text-indigo-400" />
                   </div>
                   <h3 className="text-lg font-black text-white mb-3 tracking-tighter uppercase">Historical Resolution Archive</h3>
-                  <p className="text-xs text-white/40 leading-relaxed max-w-xs mb-8">
-                    Analyze every resolved prediction market from 2018–2026. Filter by accuracy, Brier Score, and volume.
-                  </p>
                   <button className="bg-white text-black text-[10px] font-black px-6 py-3 rounded-xl hover:bg-indigo-400 hover:text-white transition-all tracking-[0.2em] uppercase shadow-xl shadow-white/5">
                     Search Archive
                   </button>
@@ -400,24 +468,37 @@ export default function App() {
                     <PieChart size={40} className="text-indigo-500" />
                   </div>
                   <h2 className="text-4xl font-black text-white mb-4 tracking-tighter uppercase italic">Unified Terminal Tracker</h2>
-                  <p className="text-white/40 mb-10 max-w-md mx-auto leading-relaxed text-sm font-medium">
-                    Consolidate your P&L from Polymarket, Kalshi, and PredictIt. Manage open positions and hedge across platforms from one interface.
-                  </p>
                   <div className="flex flex-col md:flex-row justify-center gap-4">
                     <button className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-10 py-5 rounded-2xl shadow-2xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-3 text-sm tracking-widest uppercase">
                       Sync Accounts <ArrowRight size={18} />
-                    </button>
-                    <button className="bg-white/5 border border-white/10 text-white font-black px-10 py-5 rounded-2xl hover:bg-white/10 transition-all text-sm tracking-widest uppercase">
-                      Watch Demo
                     </button>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-
         </main>
       </div>
+
+      {/* Execution Toast */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }} 
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl shadow-emerald-600/40 flex items-center gap-4 border border-emerald-400/20"
+          >
+            <div className="bg-white/20 p-1.5 rounded-full">
+              <CheckCircle2 size={24} />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-widest leading-none mb-1">Execution Successful</p>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-tighter italic">Aggregated Order filled across 3 platforms</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* FOOTER DATA TICKER */}
       <footer className="fixed bottom-0 left-0 w-full h-10 bg-black border-t border-white/5 backdrop-blur-md z-50 flex items-center overflow-hidden">
@@ -427,7 +508,6 @@ export default function App() {
             { l: "FED/CUT", v: "68%", c: "up" },
             { l: "ELECTION/FR", v: "42%", c: "down" },
             { l: "S&P/6200", v: "71%", c: "up" },
-            { l: "MARS/LAND", v: "14%", c: "down" },
             { l: "ETH/PM", v: "3,142", c: "up" },
             { l: "RECESSION/26", v: "34%", c: "up" },
             { l: "STARSHIP/ORBIT", v: "78%", c: "down" },
@@ -444,7 +524,6 @@ export default function App() {
             { l: "FED/CUT", v: "68%", c: "up" },
             { l: "ELECTION/FR", v: "42%", c: "down" },
             { l: "S&P/6200", v: "71%", c: "up" },
-            { l: "MARS/LAND", v: "14%", c: "down" },
             { l: "ETH/PM", v: "3,142", c: "up" },
             { l: "RECESSION/26", v: "34%", c: "up" },
             { l: "STARSHIP/ORBIT", v: "78%", c: "down" },
