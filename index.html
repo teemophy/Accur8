@@ -9,10 +9,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --jup-bg: #030408;
+            --jup-panel: #10141f;
+            --jup-accent: #c7f284; /* Jupiter-like lime/green accent */
+            --jup-indigo: #6366f1;
+            --jup-text-dim: #9ca3af;
+        }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #06080f;
-            color: #e2e8f0;
+            background-color: var(--jup-bg);
+            color: #ffffff;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
@@ -24,7 +31,7 @@
             height: 4px;
         }
         ::-webkit-scrollbar-track {
-            background: #06080f;
+            background: var(--jup-bg);
         }
         ::-webkit-scrollbar-thumb {
             background: #1e293b;
@@ -32,43 +39,34 @@
         }
         .animate-marquee {
             display: flex;
-            animation: marquee 40s linear infinite;
+            animation: marquee 50s linear infinite;
         }
         @keyframes marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        .glass-panel {
-            background: rgba(17, 20, 29, 0.7);
-            backdrop-filter: blur(16px);
+        .jup-panel {
+            background: var(--jup-panel);
             border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1.5rem;
         }
-        .glow-indigo {
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+        .jup-gradient-text {
+            background: linear-gradient(90deg, #c7f284, #00beee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .tooltip-container:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
+        .jup-button {
+            background: linear-gradient(90deg, #c7f284, #00beee);
+            color: #000;
+            font-weight: 800;
+            transition: all 0.2s;
         }
-        .tooltip-text {
-            visibility: hidden;
-            width: 200px;
-            background-color: #1e293b;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 8px;
-            position: absolute;
-            z-index: 200;
-            bottom: 125%;
-            left: 50%;
-            margin-left: -100px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 10px;
-            line-height: 1.4;
-            border: 1px solid rgba(255,255,255,0.1);
-            pointer-events: none;
+        .jup-button:hover {
+            opacity: 0.9;
+            transform: scale(0.98);
+        }
+        .glow-accent {
+            box-shadow: 0 0 20px rgba(199, 242, 132, 0.15);
         }
         @media (max-width: 768px) {
             .mobile-hide { display: none; }
@@ -77,14 +75,14 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
-    "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
-    "framer-motion": "https://esm.sh/framer-motion@^12.34.2",
+    "react": "https://esm.sh/react@^19.2.4",
     "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
-    "vite": "https://esm.sh/vite@^7.3.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "framer-motion": "https://esm.sh/framer-motion@^12.34.2",
     "vite-plugin-vercel": "https://esm.sh/vite-plugin-vercel@^9.1.1"
   }
 }

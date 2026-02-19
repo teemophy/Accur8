@@ -7,22 +7,22 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
   const ai = getAIClient();
   
   const marketSummary = markets.map(m => (
-    `[${m.category}] ${m.question} | Avg: ${m.consensus}% | Difference: ${m.arbGap}% | Volume: ${m.volume}`
+    `[${m.category}] ${m.question} | Consensus: ${m.consensus}% | Variance: ${m.arbGap}% | Volume: ${m.volume}`
   )).join('\n');
 
   const prompt = `
-    ROLE: Professional Prediction Analyst & Game Theorist
-    TASK: Identify the "Best Case Participation" scenarios from the provided dataset. Focus on Expected Value (EV) and probability divergence.
+    ROLE: Tactical Prediction Aggregator Router
+    TASK: Analyze the prediction market dataset to determine the "Best Execution Route" for participants. Focus on finding mispriced outcomes across platforms.
     
     DATASET:
     ${marketSummary}
     
     REQUIRED OUTPUT (Markdown):
-    1. HIGH-ALPHA OPPORTUNITIES: List the top 3 markets where the price difference represents a massive mispricing opportunity.
-    2. THE "MOAT" ANALYSIS: Which platforms are currently lagging behind real-time news based on price spreads?
-    3. BEST CASE SCENARIO: For a participant with moderate risk tolerance, describe the most mathematically sound participation strategy for the current market state.
+    1. TACTICAL ENTRY POINTS: Which 3 markets represent the highest alpha participation due to platform price drift?
+    2. ROUTING LOGIC: Explain why certain platforms (e.g. Polymarket vs Kalshi) are showing divergent probabilities for the same event.
+    3. BEST CASE STRATEGY: Define a "Best Execution" strategy for the most liquid market currently being tracked.
     
-    Keep the tone professional, sharp, and focused on tactical participation. Use bold headings.
+    Keep the tone sharp, institutional, and technical. Use professional aggregator terminology.
   `;
 
   try {
@@ -30,7 +30,7 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "Neural analysis timed out.";
+    return response.text || "Routing intelligence offline.";
   } catch (err) {
     console.error("Gemini Analysis Error:", err);
     throw err;
@@ -45,15 +45,15 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
     .join(', ');
 
   const prompt = `
-    MARKET: "${market.question}"
-    PRICES: ${pricesStr}
-    AVG PRICE: ${market.consensus}%
-    MAX SPREAD: ${market.arbGap}%
+    ROUTING TARGET: "${market.question}"
+    PLATFORM DISTRIBUTION: ${pricesStr}
+    CONSENSUS MID: ${market.consensus}%
+    MAX VARIANCE: ${market.arbGap}%
     
-    In sharp, technical but readable English (max 90 words):
-    - Identify the specific platform that is likely mispriced compared to the consensus.
-    - Analyze the "Best Case Participation": What is the ideal entry point?
-    - Risk Factor: One reason why this spread might exist beyond just "lag" (e.g. liquidity lock).
+    In a technical brief (max 85 words):
+    - Identify the specific platform that is currently "stale" or showing the best entry price.
+    - Analyze the "Best Route": Is it better to participate on the most accurate platform (Polymarket) or the fastest settlement platform (Kalshi)?
+    - Expected Value: Rate the Participation Confidence from 1-10.
   `;
 
   try {
@@ -64,7 +64,7 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
         temperature: 0.1,
       }
     });
-    return response.text || "Tactical scan incomplete.";
+    return response.text || "Specific routing scan failed.";
   } catch (err) {
     console.error("Gemini Specific Error:", err);
     throw err;
