@@ -10,16 +10,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --jup-bg: #030408;
-            --jup-panel: #10141f;
-            --jup-accent: #c7f284; /* Jupiter-like lime/green accent */
-            --jup-indigo: #6366f1;
-            --jup-text-dim: #9ca3af;
+            --ph-bg: #06080f;
+            --ph-panel: #11141d;
+            --ph-indigo: #6366f1;
+            --ph-fuchsia: #d946ef;
         }
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--jup-bg);
-            color: #ffffff;
+            background-color: var(--ph-bg);
+            color: #e2e8f0;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
         }
@@ -31,7 +30,7 @@
             height: 4px;
         }
         ::-webkit-scrollbar-track {
-            background: var(--jup-bg);
+            background: var(--ph-bg);
         }
         ::-webkit-scrollbar-thumb {
             background: #1e293b;
@@ -45,44 +44,42 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        .jup-panel {
-            background: var(--jup-panel);
+        .ph-panel {
+            background: var(--ph-panel);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 1.5rem;
+            border-radius: 1.25rem;
         }
-        .jup-gradient-text {
-            background: linear-gradient(90deg, #c7f284, #00beee);
+        .ph-gradient-text {
+            background: linear-gradient(90deg, #6366f1, #a855f7);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .jup-button {
-            background: linear-gradient(90deg, #c7f284, #00beee);
-            color: #000;
+        .ph-button {
+            background: #6366f1;
+            color: #fff;
             font-weight: 800;
             transition: all 0.2s;
         }
-        .jup-button:hover {
-            opacity: 0.9;
-            transform: scale(0.98);
+        .ph-button:hover {
+            background: #4f46e5;
+            transform: translateY(-1px);
         }
-        .glow-accent {
-            box-shadow: 0 0 20px rgba(199, 242, 132, 0.15);
-        }
-        @media (max-width: 768px) {
-            .mobile-hide { display: none; }
+        .glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
     "lucide-react": "https://esm.sh/lucide-react@^0.574.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
-    "vite": "https://esm.sh/vite@^7.3.1",
     "framer-motion": "https://esm.sh/framer-motion@^12.34.2",
+    "@google/genai": "https://esm.sh/@google/genai@^1.41.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
     "vite-plugin-vercel": "https://esm.sh/vite-plugin-vercel@^9.1.1"
   }
 }

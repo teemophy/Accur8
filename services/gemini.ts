@@ -1,28 +1,40 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { Market } from "../types";
 
+// Helper function to initialize GoogleGenAI strictly using process.env.API_KEY
 const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string> {
   const ai = getAIClient();
   
   const marketSummary = markets.map(m => (
-    `[${m.category}] ${m.question} | Consensus: ${m.consensus}% | Variance: ${m.arbGap}% | Volume: ${m.volume}`
+    `[${m.category}] ${m.question} | Mid-Price: ${m.consensus ?? 'N/A'}% | Price Difference: ${m.arbGap ?? 'N/A'}% | Volume: ${m.volume}`
   )).join('\n');
 
   const prompt = `
-    ROLE: Tactical Prediction Aggregator Router
-    TASK: Analyze the prediction market dataset to determine the "Best Execution Route" for participants. Focus on finding mispriced outcomes across platforms.
+    ROLE: Friendly Prediction Market Guide
+    TASK: Explain the current prediction market landscape to a beginner. Help them find where the "best deals" are (the biggest price differences between sites) and what to do.
     
     DATASET:
     ${marketSummary}
     
-    REQUIRED OUTPUT (Markdown):
-    1. TACTICAL ENTRY POINTS: Which 3 markets represent the highest alpha participation due to platform price drift?
-    2. ROUTING LOGIC: Explain why certain platforms (e.g. Polymarket vs Kalshi) are showing divergent probabilities for the same event.
-    3. BEST CASE STRATEGY: Define a "Best Execution" strategy for the most liquid market currently being tracked.
+    CRITICAL FORMATTING RULE: 
+    - DO NOT use asterisks (**) for bolding or any other purpose.
+    - Use headers in the format [HEADER NAME] on a new line.
+    - Keep sentences short and clear.
     
-    Keep the tone sharp, institutional, and technical. Use professional aggregator terminology.
+    REQUIRED OUTPUT STRUCTURE:
+    [TOP OPPORTUNITIES]
+    List 3 specific events with the biggest price differences. Tell the user which site is "cheaper" to buy on.
+    
+    [SIMPLE ACTION PLAN]
+    Give a clear 2-step guide on how a new user can take advantage of these price differences today.
+    
+    [MARKET INSIGHTS]
+    Why are these sites showing different prices? Explain it in plain English.
+    
+    TONE: Helpful, clear, and encouraging. Avoid heavy financial jargon. Use words like Deal, Savings, and Difference. No introductory or concluding conversational filler.
   `;
 
   try {
@@ -30,7 +42,7 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
       model: 'gemini-3-flash-preview',
       contents: prompt,
     });
-    return response.text || "Routing intelligence offline.";
+    return response.text || "Scanning for market deals...";
   } catch (err) {
     console.error("Gemini Analysis Error:", err);
     throw err;
@@ -46,14 +58,15 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
 
   const prompt = `
     ROUTING TARGET: "${market.question}"
-    PLATFORM DISTRIBUTION: ${pricesStr}
-    CONSENSUS MID: ${market.consensus}%
-    MAX VARIANCE: ${market.arbGap}%
+    PRICES: ${pricesStr}
+    CONSENSUS PRICE: ${market.consensus ?? 'N/A'}%
+    BIGGEST DIFFERENCE: ${market.arbGap ?? 'N/A'}%
     
-    In a technical brief (max 85 words):
-    - Identify the specific platform that is currently "stale" or showing the best entry price.
-    - Analyze the "Best Route": Is it better to participate on the most accurate platform (Polymarket) or the fastest settlement platform (Kalshi)?
-    - Expected Value: Rate the Participation Confidence from 1-10.
+    In a friendly brief (max 90 words):
+    - DO NOT use asterisks.
+    - Which site has the lowest price right now?
+    - Is it a good deal compared to the other sites?
+    - Give one simple tip on why the user might choose one site over the other.
   `;
 
   try {
@@ -64,7 +77,7 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
         temperature: 0.1,
       }
     });
-    return response.text || "Specific routing scan failed.";
+    return response.text || "Checking prices...";
   } catch (err) {
     console.error("Gemini Specific Error:", err);
     throw err;

@@ -1,19 +1,35 @@
 export enum TabType {
-  LIVE = 'live',
+  HOME = 'home',
+  PLATFORMS = 'platforms',
+  ODDS = 'odds',
   ACCURACY = 'accuracy',
-  INTEGRATE = 'integrate',
-  AI_INSIGHTS = 'ai-insights'
+  SEARCH = 'search',
+  DASHBOARD = 'dashboard'
 }
 
 export interface Platform {
   id: string;
   name: string;
   logo: string;
-  color: string;
-  status: 'Operational' | 'Degraded' | 'Offline';
-  accuracy: number;
+  type: 'centralized' | 'decentralized' | 'forecasting';
+  isRealMoney: boolean;
+  usFriendly: boolean;
+  accuracy: number; // For F5 Leaderboard
+  brierScore: number;
   volume: string;
-  delay: string;
+  feeStructure: string;
+  categories: string[];
+  ratings: {
+    liquidity: number;
+    variety: number;
+    fees: number;
+    ux: number;
+    regulatory: number;
+    beginner: number;
+  };
+  pros: string[];
+  cons: string[];
+  bestFor: string[];
 }
 
 export interface MarketPrice {
@@ -21,6 +37,8 @@ export interface MarketPrice {
   kalshi?: number;
   predictit?: number;
   manifold?: number;
+  smarkets?: number;
+  betfair?: number;
 }
 
 export interface Market {
@@ -32,6 +50,7 @@ export interface Market {
   ends: string;
   consensus?: number;
   arbGap?: number;
+  isMatched?: boolean;
 }
 
 export interface NewsItem {
