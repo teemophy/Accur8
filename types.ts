@@ -1,3 +1,4 @@
+
 export enum TabType {
   HOME = 'home',
   PLATFORMS = 'platforms',
@@ -14,7 +15,7 @@ export interface Platform {
   type: 'centralized' | 'decentralized' | 'forecasting';
   isRealMoney: boolean;
   usFriendly: boolean;
-  accuracy: number; // For F5 Leaderboard
+  accuracy: number;
   brierScore: number;
   volume: string;
   feeStructure: string;
@@ -58,4 +59,15 @@ export interface NewsItem {
   tag: string;
   title: string;
   time: string;
+}
+
+export interface Position {
+  id: string;
+  marketId: string;
+  marketQuestion: string;
+  side: 'Yes' | 'No';
+  amountSpent: number;
+  shares: number;
+  entryPrice: number;
+  timestamp: number;
 }
