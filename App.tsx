@@ -234,12 +234,18 @@ const LiveOddsFeed = ({ markets, onMarketClick, watchlist, onWatch }: { markets:
               </td>
               <td className="px-4 md:px-6 py-4">
                  <div className="flex justify-center gap-1.5">
-                    {Object.entries(m.prices).map(([p, v]) => (
-                      <div key={p} className="w-8 h-8 rounded-lg bg-white/5 border border-white/5 flex flex-col items-center justify-center transition-all hover:bg-white/10">
-                        <span className="text-[8px] font-black text-white/40 uppercase leading-none">{p[0]}</span>
-                        <span className="text-[10px] font-bold text-white mt-0.5">{v}%</span>
-                      </div>
-                    ))}
+                    {Object.entries(m.prices).map(([p, v]) => {
+                      const isBest = v === Math.min(...Object.values(m.prices).filter((val): val is number => val !== undefined));
+                      return (
+                        <div key={p} className={`relative w-8 h-8 rounded-lg border flex flex-col items-center justify-center transition-all ${isBest ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                          <span className={`text-[8px] font-black uppercase leading-none ${isBest ? 'text-indigo-400' : 'text-white/40'}`}>{p[0]}</span>
+                          <span className={`text-[10px] font-bold mt-0.5 ${isBest ? 'text-white' : 'text-white/60'}`}>{v}%</span>
+                          {isBest && (
+                            <div className="absolute -top-2 -right-2 bg-indigo-500 text-[6px] font-black px-1 py-0.5 rounded shadow-lg animate-pulse">BEST</div>
+                          )}
+                        </div>
+                      );
+                    })}
                  </div>
               </td>
               <td className="px-4 md:px-6 py-4 text-center">

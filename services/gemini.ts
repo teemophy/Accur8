@@ -31,14 +31,14 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
     - Keep sentences short and clear.
     
     REQUIRED OUTPUT STRUCTURE:
-    [TOP OPPORTUNITIES]
-    List 3 specific events with the biggest price differences. Tell the user which site is "cheaper" to buy on.
+    [BEST PLATFORM RECOMMENDATIONS]
+    Identify the 3 markets with the most significant price gaps. For each, explicitly state: "BEST BUY: [Platform Name]" and explain why it's the superior choice for that specific bet.
     
-    [SIMPLE ACTION PLAN]
-    Give a clear 2-step guide on how a new user can take advantage of these price differences today.
+    [ARBITRAGE ALERTS]
+    Are there any markets where the price difference is >5%? If so, flag them as "URGENT OPPORTUNITIES" and tell the user how much they save by switching platforms.
     
-    [MARKET INSIGHTS]
-    Why are these sites showing different prices? Explain it in plain English.
+    [PLATFORM QUALITY VERDICT]
+    Based on the current volume and prices, which platform is currently the "Market Leader" for accuracy?
     
     TONE: Helpful, clear, and encouraging. Avoid heavy financial jargon. Use words like Deal, Savings, and Difference. No introductory or concluding conversational filler.
   `;
