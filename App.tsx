@@ -9,6 +9,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TabType, Market, Platform, Position } from './types';
 import { PLATFORMS, INITIAL_MARKETS } from './constants';
 import { getGeminiMarketAnalysis, getGeminiSpecificMarketDeepDive } from './services/gemini';
+import { generateLocalInsights, MarketInsight } from './services/marketEngine';
+
+declare global {
+  interface Window {
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
 
 // --- Utility: Sparkline Component ---
 const Sparkline = ({ color = "#6366f1", seed = 0 }: { color?: string, seed?: number }) => {
@@ -54,7 +64,7 @@ const HeroSearch = ({ onSearch }: { onSearch: (q: string) => void }) => (
   </div>
 );
 
-const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balance, onTrade }: { market: Market | null, isOpen: boolean, onClose: () => void, onWatch: (id: string) => void, isWatched: boolean, balance: number, onTrade: (side: 'Yes' | 'No', amount: number) => void }) => {
+const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balance, onTrade, hasGeminiKey, onConnectGemini }: { market: Market | null, isOpen: boolean, onClose: () => void, onWatch: (id: string) => void, isWatched: boolean, balance: number, onTrade: (side: 'Yes' | 'No', amount: number) => void, hasGeminiKey: boolean, onConnectGemini: () => void }) => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showTradePanel, setShowTradePanel] = useState(false);
@@ -62,12 +72,14 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
   const [tradeAmount, setTradeAmount] = useState<string>("100");
 
   useEffect(() => {
-    if (isOpen && market) {
+    if (isOpen && market && hasGeminiKey) {
       const fetchData = async () => {
         setLoading(true);
         try {
           const res = await getGeminiSpecificMarketDeepDive(market);
           setAnalysis(res);
+        } catch (err) {
+          console.error("Deep Dive Error:", err);
         } finally {
           setLoading(false);
         }
@@ -77,7 +89,7 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
       setAnalysis(null);
       setShowTradePanel(false);
     }
-  }, [isOpen, market]);
+  }, [isOpen, market, hasGeminiKey]);
 
   if (!market) return null;
 
@@ -129,7 +141,17 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
                       <Sparkles size={16} className="text-indigo-400" />
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Gemini Intelligence Report</h4>
                     </div>
-                    {loading ? (
+                    {!hasGeminiKey ? (
+                      <div className="text-center py-4">
+                        <p className="text-[10px] text-white/40 mb-3">AI Deep Dive requires a connected Gemini key.</p>
+                        <button 
+                          onClick={onConnectGemini}
+                          className="px-4 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-indigo-500/30 transition-all"
+                        >
+                          Connect Gemini
+                        </button>
+                      </div>
+                    ) : loading ? (
                       <div className="space-y-3 animate-pulse">
                         <div className="h-3 bg-white/5 rounded w-full" />
                         <div className="h-3 bg-white/5 rounded w-5/6" />
@@ -679,17 +701,44 @@ export default function App() {
   const [isCommunityModalOpen, setIsCommunityModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [localInsights, setLocalInsights] = useState<MarketInsight[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [hasGeminiKey, setHasGeminiKey] = useState<boolean>(true);
   
   // Terminal State
   const [watchlist, setWatchlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('ph_watchlist') || '[]'));
   const [balance, setBalance] = useState<number>(() => parseFloat(localStorage.getItem('ph_balance') || '10000'));
   const [positions, setPositions] = useState<Position[]>(() => JSON.parse(localStorage.getItem('ph_positions') || '[]'));
+
+  useEffect(() => {
+    const checkGeminiKey = async () => {
+      // Check if process.env.GEMINI_API_KEY is present (injected by Vite)
+      if (!process.env.GEMINI_API_KEY) {
+        // If not, check if user has selected one via platform
+        if (window.aistudio) {
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasGeminiKey(selected);
+        } else {
+          setHasGeminiKey(false);
+        }
+      }
+    };
+    checkGeminiKey();
+  }, []);
+
+  const handleConnectGemini = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      setHasGeminiKey(true);
+      // Refresh analysis
+      setAiAnalysis(null);
+    }
+  };
 
   useEffect(() => {
     // Fetch real markets on mount
@@ -809,30 +858,51 @@ export default function App() {
   }, [search, filterType, watchlist, liveMarkets]);
 
   useEffect(() => {
-    if (activeTab === TabType.HOME && !aiAnalysis && marketData.length > 0) {
+    if (marketData.length > 0) {
+      const insights = generateLocalInsights(marketData.slice(0, 10));
+      setLocalInsights(insights);
+    }
+  }, [marketData]);
+
+  useEffect(() => {
+    if (activeTab === TabType.HOME && !aiAnalysis && marketData.length > 0 && hasGeminiKey) {
       const fetchData = async () => {
         setIsAiLoading(true);
         try {
           const res = await getGeminiMarketAnalysis(marketData.slice(0, 10));
           setAiAnalysis(res);
+        } catch (err: unknown) {
+          console.error("AI Analysis Error:", err);
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          if (errorMessage.includes("entity was not found")) {
+            setHasGeminiKey(false);
+          }
         } finally {
           setIsAiLoading(false);
         }
       };
       fetchData();
     }
-  }, [activeTab, aiAnalysis, marketData]);
+  }, [activeTab, aiAnalysis, marketData, hasGeminiKey]);
 
   const parsedAiSections = useMemo(() => {
-    if (!aiAnalysis) return [];
-    const sections = aiAnalysis.split(/\n(?=\[.*?\])/g).filter(s => s.trim().length > 0);
-    return sections.map(s => {
-      const titleMatch = s.match(/^\s*\[(.*?)\]/);
-      const title = titleMatch ? titleMatch[1] : "Strategic Update";
-      const content = s.replace(/^\s*\[(.*?)\]/, "").replace(/\*/g, "").trim();
-      return { title, content };
-    });
-  }, [aiAnalysis]);
+    if (aiAnalysis) {
+      const sections = aiAnalysis.split(/\n(?=\[.*?\])/g).filter(s => s.trim().length > 0);
+      return sections.map(s => {
+        const titleMatch = s.match(/^\s*\[(.*?)\]/);
+        const title = titleMatch ? titleMatch[1] : "Strategic Update";
+        const content = s.replace(/^\s*\[(.*?)\]/, "").replace(/\*/g, "").trim();
+        return { title, content, type: 'ai' as const };
+      });
+    }
+    
+    // Fallback to local insights if AI is not available
+    return localInsights.map(insight => ({
+      title: insight.title,
+      content: insight.content,
+      type: insight.type
+    }));
+  }, [aiAnalysis, localInsights]);
 
   return (
     <div className="min-h-screen bg-[#06080f] text-[#e2e8f0] flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
@@ -949,16 +1019,38 @@ export default function App() {
                           ))}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {parsedAiSections.map((section, idx) => (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={idx} className={`ph-panel p-6 bg-gradient-to-br border-white/5 ${idx === 0 ? 'from-indigo-600/10 to-transparent border-indigo-500/20' : 'from-white/[0.02] to-transparent'}`}>
-                               <div className="flex items-center gap-2 mb-3">
-                                  {idx === 0 ? <Target size={14} className="text-indigo-400" /> : idx === 1 ? <Zap size={14} className="text-indigo-400" /> : <Shield size={14} className="text-indigo-400" />}
-                                  <h4 className="text-[10px] font-black uppercase tracking-widest text-white/80">{section.title}</h4>
-                               </div>
-                               <div className="text-white/60 text-[11px] md:text-xs leading-relaxed whitespace-pre-line">{section.content}</div>
-                            </motion.div>
-                          ))}
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {parsedAiSections.map((section, idx) => (
+                              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} key={idx} className={`ph-panel p-6 bg-gradient-to-br border-white/5 ${idx === 0 ? 'from-indigo-600/10 to-transparent border-indigo-500/20' : 'from-white/[0.02] to-transparent'}`}>
+                                 <div className="flex items-center gap-2 mb-3">
+                                    {idx === 0 ? <Target size={14} className="text-indigo-400" /> : idx === 1 ? <Zap size={14} className="text-indigo-400" /> : <Shield size={14} className="text-indigo-400" />}
+                                    <h4 className="text-[10px] font-black uppercase tracking-widest text-white/80">{section.title}</h4>
+                                 </div>
+                                 <div className="text-white/60 text-[11px] md:text-xs leading-relaxed whitespace-pre-line">{section.content}</div>
+                              </motion.div>
+                            ))}
+                          </div>
+                          
+                          {!hasGeminiKey && (
+                            <div className="ph-panel p-4 bg-indigo-600/5 border border-indigo-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-600/20 rounded-lg">
+                                  <Sparkles size={16} className="text-indigo-400 animate-pulse" />
+                                </div>
+                                <div>
+                                  <h5 className="text-[10px] font-black text-white uppercase tracking-widest">Enhanced AI Analysis Offline</h5>
+                                  <p className="text-[9px] text-white/40">Connect your Gemini key for deep strategic context and search-grounded insights.</p>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={handleConnectGemini}
+                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg transition-all"
+                              >
+                                Upgrade Intelligence
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1028,6 +1120,8 @@ export default function App() {
         isWatched={selectedMarket ? watchlist.includes(selectedMarket.id) : false} 
         balance={balance}
         onTrade={handleExecuteTrade}
+        hasGeminiKey={hasGeminiKey}
+        onConnectGemini={handleConnectGemini}
       />
       
       <CommunityModal isOpen={isCommunityModalOpen} onClose={() => setIsCommunityModalOpen(false)} />
