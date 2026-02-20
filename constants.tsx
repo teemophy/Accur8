@@ -9,7 +9,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 5, variety: 5, fees: 5, ux: 4, regulatory: 2, beginner: 3 },
     pros: ["Highest liquidity", "Zero trading fees", "Crypto native"],
     cons: ["VPN usually required for US", "Requires USDC/Polygon"],
-    bestFor: ["Politics", "Arbitrage", "High Volume"]
+    bestFor: ["Politics", "Arbitrage", "High Volume"],
+    url: "https://polymarket.com"
   },
   { 
     id: "kalshi", name: "Kalshi", logo: "🟢", type: 'centralized', isRealMoney: true, usFriendly: true,
@@ -18,7 +19,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 4, variety: 3, fees: 4, ux: 5, regulatory: 5, beginner: 5 },
     pros: ["CFTC Regulated", "Bank deposits", "50-state legal"],
     cons: ["Limited categories", "Lower liquidity than Poly"],
-    bestFor: ["Regulated Trading", "US Residents", "Macro Economics"]
+    bestFor: ["Regulated Trading", "US Residents", "Macro Economics"],
+    url: "https://kalshi.com"
   },
   { 
     id: "predictit", name: "PredictIt", logo: "🔴", type: 'centralized', isRealMoney: true, usFriendly: true,
@@ -27,7 +29,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 2, variety: 2, fees: 1, ux: 3, regulatory: 4, beginner: 4 },
     pros: ["US Legal (No-Action)", "Unique political depth"],
     cons: ["High fees", "850-share limit", "Slow settlement"],
-    bestFor: ["Small scale politics", "Academic data"]
+    bestFor: ["Small scale politics", "Academic data"],
+    url: "https://predictit.org"
   },
   { 
     id: "manifold", name: "Manifold", logo: "🟣", type: 'forecasting', isRealMoney: false, usFriendly: true,
@@ -36,7 +39,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 1, variety: 5, fees: 5, ux: 5, regulatory: 3, beginner: 5 },
     pros: ["Most creative markets", "Infinite variety", "Fun UX"],
     cons: ["No cash payout", "Market manipulation risk"],
-    bestFor: ["Casual forecasting", "Niche topics"]
+    bestFor: ["Casual forecasting", "Niche topics"],
+    url: "https://manifold.markets"
   },
   { 
     id: "smarkets", name: "Smarkets", logo: "🟡", type: 'centralized', isRealMoney: true, usFriendly: false,
@@ -45,7 +49,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 4, variety: 4, fees: 3, ux: 4, regulatory: 4, beginner: 3 },
     pros: ["Best for Sports", "Competitive odds"],
     cons: ["UK/EU centered", "Tough KYC"],
-    bestFor: ["European Markets", "Sports Arbitrage"]
+    bestFor: ["European Markets", "Sports Arbitrage"],
+    url: "https://smarkets.com"
   },
   { 
     id: "insight", name: "Insight Prediction", logo: "👁️", type: 'centralized', isRealMoney: true, usFriendly: true,
@@ -54,7 +59,8 @@ export const PLATFORMS: Platform[] = [
     ratings: { liquidity: 2, variety: 3, fees: 3, ux: 2, regulatory: 3, beginner: 2 },
     pros: ["US friendly", "Aggressive pricing"],
     cons: ["Low volume", "Old UX"],
-    bestFor: ["Hedging", "Contrarian bets"]
+    bestFor: ["Hedging", "Contrarian bets"],
+    url: "https://insightprediction.com"
   }
 ];
 

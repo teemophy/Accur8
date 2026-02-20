@@ -32,6 +32,7 @@ export interface Platform {
   pros: string[];
   cons: string[];
   bestFor: string[];
+  url: string;
 }
 
 export interface MarketPrice {

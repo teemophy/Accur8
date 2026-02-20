@@ -22,8 +22,16 @@ async function startServer() {
   // Fetch real markets from Polymarket
   app.get("/api/markets", async (req, res) => {
     try {
-      // Polymarket Gamma API for active markets
-      const response = await fetch("https://gamma-api.polymarket.com/markets?active=true&limit=20&order=volume&ascending=false");
+      const { filter } = req.query;
+      let url = "https://gamma-api.polymarket.com/markets?active=true&limit=20&order=volume&ascending=false";
+      
+      if (filter === 'new') {
+        url = "https://gamma-api.polymarket.com/markets?active=true&limit=20&order=startDate&ascending=false";
+      } else if (filter === 'trending') {
+        url = "https://gamma-api.polymarket.com/markets?active=true&limit=20&order=volume&ascending=false";
+      }
+
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch from Polymarket");
       
       const data = await response.json();

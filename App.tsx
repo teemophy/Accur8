@@ -11,8 +11,13 @@ import { PLATFORMS, INITIAL_MARKETS } from './constants';
 import { getGeminiMarketAnalysis, getGeminiSpecificMarketDeepDive } from './services/gemini';
 
 // --- Utility: Sparkline Component ---
-const Sparkline = ({ color = "#6366f1" }: { color?: string }) => {
-  const points = useMemo(() => Array.from({ length: 8 }, () => Math.floor(Math.random() * 20) + 5), []);
+const Sparkline = ({ color = "#6366f1", seed = 0 }: { color?: string, seed?: number }) => {
+  const points = useMemo(() => {
+    // Use a deterministic "random" based on seed if needed, 
+    // or just a fixed set of points for the sparkline
+    const base = [10, 15, 8, 12, 18, 10, 14, 12];
+    return base.map(p => p + (seed % 5));
+  }, [seed]);
   const path = `M ${points.map((p, i) => `${i * 10},${p}`).join(' L ')}`;
   return (
     <svg width="60" height="25" className="opacity-50 group-hover:opacity-100 transition-opacity">
@@ -58,10 +63,16 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
 
   useEffect(() => {
     if (isOpen && market) {
-      setLoading(true);
-      getGeminiSpecificMarketDeepDive(market)
-        .then(setAnalysis)
-        .finally(() => setLoading(false));
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          const res = await getGeminiSpecificMarketDeepDive(market);
+          setAnalysis(res);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchData();
     } else {
       setAnalysis(null);
       setShowTradePanel(false);
@@ -199,13 +210,21 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
   );
 };
 
-const LiveOddsFeed = ({ markets, onMarketClick, watchlist, onWatch }: { markets: Market[], onMarketClick: (m: Market) => void, watchlist: string[], onWatch: (id: string) => void }) => (
+const LiveOddsFeed = ({ markets, onMarketClick, watchlist, onWatch, lastUpdated }: { markets: Market[], onMarketClick: (m: Market) => void, watchlist: string[], onWatch: (id: string) => void, lastUpdated: Date }) => (
   <div className="ph-panel overflow-hidden border-white/5 bg-black/10 shadow-2xl">
     <div className="p-4 md:p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
       <h2 className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-white/30 flex items-center gap-2">
          <Shield size={12} className="text-indigo-500"/> Price Comparison Matrix
       </h2>
-      <div className="text-[8px] font-black text-white/20 uppercase tracking-widest hidden sm:block">Click any row for Deep Intelligence</div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Live Feed</span>
+          </div>
+          <div className="text-[9px] font-black text-white/20 uppercase tracking-widest hidden sm:block">
+            Last Sync: {lastUpdated.toLocaleTimeString()}
+          </div>
+        </div>
     </div>
     <div className="overflow-x-auto scrollbar-hide">
       <table className="w-full text-left min-w-[750px]">
@@ -250,7 +269,7 @@ const LiveOddsFeed = ({ markets, onMarketClick, watchlist, onWatch }: { markets:
                  </div>
               </td>
               <td className="px-4 md:px-6 py-4 text-center">
-                <div className="flex justify-center"><Sparkline color={m.arbGap! >= 4 ? '#6366f1' : '#475569'} /></div>
+                <div className="flex justify-center"><Sparkline color={m.arbGap! >= 4 ? '#6366f1' : '#475569'} seed={m.id.length} /></div>
               </td>
               <td className="px-4 md:px-6 py-4 text-center">
                 <span className="text-xs md:text-sm font-black text-white/80">{m.consensus}%</span>
@@ -405,9 +424,14 @@ const PlatformCard = ({ platform }: { platform: Platform, key?: React.Key }) => 
           ))}
         </div>
       </div>
-      <button className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/5 flex items-center justify-center gap-2">
-        View Markets <ExternalLink size={12} />
-      </button>
+      <a 
+        href={platform.url} 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="w-full py-3 bg-white/5 hover:bg-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white transition-all border border-white/5 flex items-center justify-center gap-2"
+      >
+        Visit Site <ExternalLink size={12} />
+      </a>
     </div>
   </div>
 );
@@ -509,7 +533,7 @@ const PlatformComparisonMatrix = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {categories.map((cat, rowIdx) => (
+              {categories.map((cat) => (
                 <tr key={cat.key} className="hover:bg-white/[0.02] transition-colors group">
                   <td className="px-8 py-6 sticky left-0 bg-[#11141d] z-10 border-r border-white/5">
                     <div className="flex items-center gap-3">
@@ -520,7 +544,7 @@ const PlatformComparisonMatrix = () => {
                     </div>
                   </td>
                   {PLATFORMS.map(p => {
-                    const rating = (p.ratings as any)[cat.key] || 0;
+                    const rating = (p.ratings as Record<string, number>)[cat.key] || 0;
                     return (
                       <td key={`${p.id}-${cat.key}`} className="px-6 py-6 text-center">
                         <div className="flex flex-col items-center">
@@ -660,6 +684,7 @@ export default function App() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
   // Terminal State
   const [watchlist, setWatchlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('ph_watchlist') || '[]'));
@@ -670,19 +695,21 @@ export default function App() {
     // Fetch real markets on mount
     const fetchMarkets = async () => {
       try {
-        const res = await fetch('/api/markets');
+        const query = filterType !== 'all' ? `?filter=${filterType}` : '';
+        const res = await fetch(`/api/markets${query}`);
         const data = await res.json();
         if (data.status === 'ok') {
           setLiveMarkets(data.markets);
+          setLastUpdated(new Date());
         }
       } catch (err) {
         console.error("Failed to fetch markets:", err);
       }
     };
     fetchMarkets();
-    const interval = setInterval(fetchMarkets, 60000); // Update every minute
+    const interval = setInterval(fetchMarkets, 30000); // Update every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [filterType]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -779,14 +806,20 @@ export default function App() {
     }
 
     return base;
-  }, [search, filterType, watchlist]);
+  }, [search, filterType, watchlist, liveMarkets]);
 
   useEffect(() => {
     if (activeTab === TabType.HOME && !aiAnalysis && marketData.length > 0) {
-      setIsAiLoading(true);
-      getGeminiMarketAnalysis(marketData.slice(0, 10))
-        .then(setAiAnalysis)
-        .finally(() => setIsAiLoading(false));
+      const fetchData = async () => {
+        setIsAiLoading(true);
+        try {
+          const res = await getGeminiMarketAnalysis(marketData.slice(0, 10));
+          setAiAnalysis(res);
+        } finally {
+          setIsAiLoading(false);
+        }
+      };
+      fetchData();
     }
   }, [activeTab, aiAnalysis, marketData]);
 
@@ -804,8 +837,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#06080f] text-[#e2e8f0] flex flex-col font-sans selection:bg-indigo-500/30 overflow-x-hidden">
       
-      <nav className="h-16 border-b border-white/5 bg-[#06080f]/90 backdrop-blur-xl sticky top-0 z-[100] px-4 md:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4 md:gap-12">
+      <nav className="h-16 border-b border-white/5 bg-[#06080f]/90 backdrop-blur-xl sticky top-0 z-[100] px-4 md:px-8 flex items-center justify-center">
+        <div className="w-full max-w-7xl flex items-center justify-between">
+          <div className="flex items-center gap-4 md:gap-12">
           <div className="flex items-center gap-2 md:gap-3 cursor-pointer group" onClick={() => setActiveTab(TabType.HOME)}>
             <div className="w-8 h-8 md:w-9 md:h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-xl shadow-indigo-600/20 active:scale-95 transition-all">
               <TrendingUp size={18} className="text-white" />
@@ -847,7 +881,8 @@ export default function App() {
           </button>
           <button className="lg:hidden p-2 text-white/40" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><Menu size={24} /></button>
         </div>
-      </nav>
+      </div>
+    </nav>
 
       {/* Mobile Sidebar */}
       <AnimatePresence>
@@ -873,7 +908,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="flex-1 max-w-[1500px] w-full mx-auto p-4 md:p-8 space-y-8 md:space-y-12">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 space-y-8 md:space-y-12">
         <AnimatePresence mode="wait">
           {activeTab === TabType.HOME && (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-8 md:space-y-16">
@@ -891,14 +926,14 @@ export default function App() {
                           { id: 'watchlist', label: 'Watchlist', icon: <Star size={10}/> },
                           { id: 'new', label: 'New', icon: <Clock size={10}/> }
                         ].map(f => (
-                          <button key={f.id} onClick={() => setFilterType(f.id as any)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${filterType === f.id ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}>
+                          <button key={f.id} onClick={() => setFilterType(f.id as 'all' | 'trending' | 'high_yield' | 'low_yield' | 'new' | 'watchlist')} className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${filterType === f.id ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}>
                             {f.icon}{f.label}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <LiveOddsFeed markets={marketData.slice(0, 10)} onMarketClick={(m) => { setSelectedMarket(m); setIsDetailModalOpen(true); }} watchlist={watchlist} onWatch={toggleWatchlist} />
+                    <LiveOddsFeed markets={marketData.slice(0, 10)} onMarketClick={(m) => { setSelectedMarket(m); setIsDetailModalOpen(true); }} watchlist={watchlist} onWatch={toggleWatchlist} lastUpdated={lastUpdated} />
                     
                     <div className="space-y-6">
                        <h3 className="text-lg md:text-xl font-black uppercase italic text-white flex items-center gap-3">
@@ -967,11 +1002,11 @@ export default function App() {
                   <div className="max-w-xl"><h1 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white mb-4">Master Index</h1></div>
                   <div className="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto no-scrollbar">
                     {['all', 'trending', 'high_yield', 'watchlist', 'new'].map(f => (
-                      <button key={f} onClick={() => setFilterType(f as any)} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all flex-1 md:flex-none whitespace-nowrap ${filterType === f ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}>{f.replace('_', ' ')}</button>
+                      <button key={f} onClick={() => setFilterType(f as 'all' | 'trending' | 'high_yield' | 'low_yield' | 'new' | 'watchlist')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all flex-1 md:flex-none whitespace-nowrap ${filterType === f ? 'bg-indigo-600 text-white' : 'text-white/40 hover:text-white'}`}>{f.replace('_', ' ')}</button>
                     ))}
                   </div>
                </div>
-               <LiveOddsFeed markets={marketData} onMarketClick={(m) => { setSelectedMarket(m); setIsDetailModalOpen(true); }} watchlist={watchlist} onWatch={toggleWatchlist} />
+               <LiveOddsFeed markets={marketData} onMarketClick={(m) => { setSelectedMarket(m); setIsDetailModalOpen(true); }} watchlist={watchlist} onWatch={toggleWatchlist} lastUpdated={lastUpdated} />
             </motion.div>
           )}
 
