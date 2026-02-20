@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { getGeminiMarketAnalysis, getGeminiSpecificMarketDeepDive } from "./services/geminiServer";
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +58,46 @@ async function startServer() {
     } catch (error) {
       console.error("Market fetch error:", error);
       res.status(500).json({ status: "error", message: "Failed to fetch markets" });
+    }
+  });
+
+  app.post("/api/intelligence/report", async (req, res) => {
+    try {
+      const { markets } = req.body; // In a real app, we'd pass data or fetch fresh
+      // For simplicity in this demo, we'll fetch fresh markets if none provided
+      let marketData = markets;
+      if (!marketData) {
+        const response = await fetch("https://gamma-api.polymarket.com/markets?active=true&limit=10&order=volume&ascending=false");
+        const data = await response.json();
+        marketData = data.map((m: { id: string; question: string; groupItemTitle: string; outcomePrices: number[]; volume: number }) => ({
+          id: m.id,
+          question: m.question,
+          category: m.groupItemTitle || "General",
+          prices: { polymarket: Math.round((m.outcomePrices?.[0] || 0.5) * 100) },
+          volume: `$${(m.volume / 1000000).toFixed(1)}M`,
+          consensus: Math.round((m.outcomePrices?.[0] || 0.5) * 100),
+          arbGap: Math.floor(Math.random() * 5) + 1
+        }));
+      }
+      
+      const analysis = await getGeminiMarketAnalysis(marketData);
+      res.json({ status: "ok", analysis });
+    } catch (error) {
+      console.error("Intelligence report error:", error);
+      res.status(500).json({ status: "error", message: "Failed to generate report" });
+    }
+  });
+
+  app.post("/api/intelligence/deep-dive", async (req, res) => {
+    try {
+      const { market } = req.body;
+      if (!market) return res.status(400).json({ status: "error", message: "Market data required" });
+      
+      const analysis = await getGeminiSpecificMarketDeepDive(market);
+      res.json({ status: "ok", analysis });
+    } catch (error) {
+      console.error("Deep dive error:", error);
+      res.status(500).json({ status: "error", message: "Failed to generate deep dive" });
     }
   });
 

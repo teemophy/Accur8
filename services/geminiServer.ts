@@ -2,11 +2,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { Market } from "../types";
 
-// Helper function to initialize GoogleGenAI strictly using process.env.GEMINI_API_KEY
 const getAIClient = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not defined. Please ensure it is set in your environment.");
+    throw new Error("GEMINI_API_KEY is not defined.");
   }
   return new GoogleGenAI({ apiKey });
 };
