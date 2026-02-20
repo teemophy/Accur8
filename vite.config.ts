@@ -13,8 +13,8 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [react(), vercel()],
     define: {
-      // Direct injection of the API_KEY into the client-side bundle
-      'process.env.API_KEY': JSON.stringify(env.API_KEY || process.env.API_KEY)
+      // Direct injection of the GEMINI_API_KEY into the client-side bundle
+      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || "")
     },
     build: {
       outDir: 'dist',

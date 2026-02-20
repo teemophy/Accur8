@@ -2,8 +2,14 @@
 import { GoogleGenAI } from "@google/genai";
 import { Market } from "../types";
 
-// Helper function to initialize GoogleGenAI strictly using process.env.API_KEY
-const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+// Helper function to initialize GoogleGenAI strictly using process.env.GEMINI_API_KEY
+const getAIClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not defined. Please ensure it is set in your environment.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string> {
   const ai = getAIClient();
@@ -74,7 +80,7 @@ export async function getGeminiSpecificMarketDeepDive(market: Market): Promise<s
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3.1-pro-preview',
       contents: prompt,
       config: {
         temperature: 0.1,
