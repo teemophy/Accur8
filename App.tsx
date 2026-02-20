@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabType, Market, Platform, Position } from './types';
 import { PLATFORMS, INITIAL_MARKETS } from './constants';
+import { getGeminiMarketAnalysis, getGeminiSpecificMarketDeepDive } from './services/gemini';
 import { generateLocalInsights, MarketInsight } from './services/marketEngine';
 
 // --- Utility: Sparkline Component ---
@@ -66,17 +67,10 @@ const MarketDetailModal = ({ market, isOpen, onClose, onWatch, isWatched, balanc
       const fetchData = async () => {
         setLoading(true);
         try {
-          const response = await fetch('/api/intelligence/deep-dive', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ market })
-          });
-          const data = await response.json();
-          if (data.status === 'ok') {
-            setAnalysis(data.analysis);
-          }
-        } catch (err) {
-          console.error("Deep Dive Error:", err);
+          const res = await getGeminiSpecificMarketDeepDive(market);
+          if (res) setAnalysis(res);
+        } catch {
+          console.warn("Deep dive AI unavailable.");
         } finally {
           setLoading(false);
         }
@@ -830,17 +824,10 @@ export default function App() {
       const fetchData = async () => {
         setIsAiLoading(true);
         try {
-          const response = await fetch('/api/intelligence/report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ markets: marketData.slice(0, 10) })
-          });
-          const data = await response.json();
-          if (data.status === 'ok') {
-            setAiAnalysis(data.analysis);
-          }
-        } catch (err: unknown) {
-          console.error("AI Analysis Error:", err);
+          const res = await getGeminiMarketAnalysis(marketData.slice(0, 10));
+          if (res) setAiAnalysis(res);
+        } catch {
+          console.warn("AI enhancement unavailable, using local engine.");
         } finally {
           setIsAiLoading(false);
         }
