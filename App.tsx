@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, TrendingUp, Activity, BarChart3, 
   Zap, History, Sparkles, CheckCircle2,
-  X, ExternalLink, Filter, Globe, Shield, Link2, Code, BrainCircuit, Menu, ChevronRight, Send, Star, ArrowRight, Lock, Target, TrendingDown, MessageSquare, Clock, Share2, Twitter, Copy, Plus, Wallet, Eye, Info, Trash2, ArrowUpRight, ArrowDownRight
+  X, ExternalLink, Filter, Globe, Shield, Link2, Code, BrainCircuit, Menu, ChevronRight, Send, Star, ArrowRight, Lock, Target, TrendingDown, MessageSquare, Clock, Share2, Twitter, Copy, Plus, Wallet, Eye, Info, Trash2, ArrowUpRight, ArrowDownRight, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabType, Market, Platform, Position } from './types';
@@ -468,6 +468,116 @@ const AccuracyLeaderboard = () => {
   );
 };
 
+const PlatformComparisonMatrix = () => {
+  const categories = [
+    { key: 'liquidity', label: 'Liquidity', icon: <Droplets size={12} className="text-blue-400" /> },
+    { key: 'variety', label: 'Market Variety', icon: <Layers size={12} className="text-purple-400" /> },
+    { key: 'fees', label: 'Fee Score', icon: <Plus size={12} className="text-emerald-400" /> },
+    { key: 'ux', label: 'UX/Design', icon: <Sparkles size={12} className="text-indigo-400" /> },
+    { key: 'regulatory', label: 'Regulatory', icon: <Shield size={12} className="text-orange-400" /> },
+    { key: 'beginner', label: 'Entry Level', icon: <Eye size={12} className="text-pink-400" /> }
+  ];
+
+  return (
+    <div className="space-y-8">
+      <div className="max-w-2xl px-2">
+        <h1 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white mb-4">Comparison Matrix</h1>
+        <p className="text-white/40 leading-relaxed">Cross-indexed ratings across the six core pillars of prediction trading. Objective data gathered from 250k+ data points.</p>
+      </div>
+
+      <div className="ph-panel overflow-hidden border-white/5 bg-black/10">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead>
+              <tr className="bg-white/[0.02] border-b border-white/5">
+                <th className="px-8 py-8 text-[10px] font-black text-white/40 uppercase tracking-widest sticky left-0 bg-[#11141d] z-10 w-48 border-r border-white/5">Rating Vector</th>
+                {PLATFORMS.map(p => (
+                  <th key={p.id} className="px-6 py-8 text-center min-w-[140px]">
+                    <div className="flex flex-col items-center">
+                      <span className="text-3xl mb-2">{p.logo}</span>
+                      <span className="text-[10px] font-black text-white uppercase tracking-tighter">{p.name}</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {categories.map((cat, rowIdx) => (
+                <tr key={cat.key} className="hover:bg-white/[0.02] transition-colors group">
+                  <td className="px-8 py-6 sticky left-0 bg-[#11141d] z-10 border-r border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
+                        {cat.icon}
+                      </div>
+                      <span className="text-[11px] font-black text-white/60 uppercase tracking-widest group-hover:text-white transition-colors">{cat.label}</span>
+                    </div>
+                  </td>
+                  {PLATFORMS.map(p => {
+                    const rating = (p.ratings as any)[cat.key] || 0;
+                    return (
+                      <td key={`${p.id}-${cat.key}`} className="px-6 py-6 text-center">
+                        <div className="flex flex-col items-center">
+                          <div className="flex gap-1 mb-2">
+                            {[1, 2, 3, 4, 5].map(dot => (
+                              <div 
+                                key={dot} 
+                                className={`w-1.5 h-4 rounded-full transition-all ${dot <= rating ? 'bg-indigo-500' : 'bg-white/5'}`} 
+                              />
+                            ))}
+                          </div>
+                          <span className={`text-[10px] font-black ${rating >= 4 ? 'text-indigo-400' : 'text-white/20'}`}>{rating}/5</span>
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              
+              <tr className="bg-indigo-500/[0.03]">
+                 <td className="px-8 py-8 sticky left-0 bg-[#11141d] z-10 border-r border-white/5">
+                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em]">Final Verdict</span>
+                 </td>
+                 {PLATFORMS.map(p => (
+                   <td key={`${p.id}-verdict`} className="px-6 py-8 text-center">
+                      <p className="text-[10px] font-bold text-white/80 leading-tight italic px-2">"{p.bestFor[0]}"</p>
+                      <button className="mt-4 px-3 py-1.5 bg-indigo-500 text-[9px] font-black uppercase text-white rounded-lg hover:bg-indigo-400 transition-all shadow-lg shadow-indigo-500/20 active:scale-95">Connect</button>
+                   </td>
+                 ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
+         <div className="ph-panel p-8 bg-gradient-to-br from-indigo-600/10 to-transparent border-indigo-500/20">
+            <h4 className="text-xs font-black text-white uppercase italic tracking-widest mb-4 flex items-center gap-2">
+               <Info size={14} className="text-indigo-400" /> Methodology Disclaimer
+            </h4>
+            <p className="text-white/40 text-[11px] leading-relaxed">Our ratings are updated every 24 hours. We pull API data from liquidity pools, community sentiment from Discord/Twitter, and real-time fee volatility indices. Regulatory scores are based on current CFTC and international licensure statuses.</p>
+         </div>
+         <div className="ph-panel p-8 flex items-center justify-between group cursor-pointer hover:border-white/10 transition-all">
+            <div>
+              <h4 className="text-xs font-black text-white uppercase italic tracking-widest mb-2">Missing a platform?</h4>
+              <p className="text-white/40 text-[11px]">Suggest a new exchange for the matrix.</p>
+            </div>
+            <div className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center group-hover:bg-indigo-500 transition-all group-hover:border-indigo-400">
+               <ChevronRight size={20} className="text-white/20 group-hover:text-white" />
+            </div>
+         </div>
+      </div>
+    </div>
+  );
+};
+
+// Added missing Droplets icon for the matrix
+const Droplets = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M7 16.3c2.2 0 4-1.8 4-4 0-3.3-4-8-4-8s-4 4.7-4 8c0 2.2 1.8 4 4 4Z" />
+    <path d="M17 16.3c2.2 0 4-1.8 4-4 0-3.3-4-8-4-8s-4 4.7-4 8c0 2.2 1.8 4 4 4Z" />
+  </svg>
+);
+
 // Added missing CommunityModal component
 const CommunityModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => (
   <AnimatePresence>
@@ -541,11 +651,52 @@ export default function App() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [liveMarkets, setLiveMarkets] = useState<Market[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   // Terminal State
   const [watchlist, setWatchlist] = useState<string[]>(() => JSON.parse(localStorage.getItem('ph_watchlist') || '[]'));
   const [balance, setBalance] = useState<number>(() => parseFloat(localStorage.getItem('ph_balance') || '10000'));
   const [positions, setPositions] = useState<Position[]>(() => JSON.parse(localStorage.getItem('ph_positions') || '[]'));
+
+  useEffect(() => {
+    // Fetch real markets on mount
+    const fetchMarkets = async () => {
+      try {
+        const res = await fetch('/api/markets');
+        const data = await res.json();
+        if (data.status === 'ok') {
+          setLiveMarkets(data.markets);
+        }
+      } catch (err) {
+        console.error("Failed to fetch markets:", err);
+      }
+    };
+    fetchMarkets();
+    const interval = setInterval(fetchMarkets, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        setIsLoggedIn(true);
+        alert("Successfully connected to Global Network!");
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const handleLogin = async () => {
+    try {
+      const res = await fetch('/api/auth/url');
+      const { url } = await res.json();
+      window.open(url, 'oauth_popup', 'width=600,height=700');
+    } catch (err) {
+      console.error("Auth error:", err);
+    }
+  };
 
   useEffect(() => {
     localStorage.setItem('ph_watchlist', JSON.stringify(watchlist));
@@ -598,7 +749,8 @@ export default function App() {
   };
 
   const marketData = useMemo(() => {
-    let base = INITIAL_MARKETS.map(m => {
+    const source = liveMarkets.length > 0 ? liveMarkets : INITIAL_MARKETS;
+    let base = source.map(m => {
       const vals = Object.values(m.prices).filter((v): v is number => v !== undefined);
       const consensus = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
       const arbGap = Math.max(...vals) - Math.min(...vals);
@@ -657,9 +809,9 @@ export default function App() {
           </div>
           
           <div className="hidden lg:flex items-center gap-1">
-            {[TabType.HOME, TabType.PLATFORMS, TabType.ODDS, TabType.ACCURACY].map(tab => (
+            {[TabType.HOME, TabType.PLATFORMS, TabType.ODDS, TabType.COMPARE, TabType.ACCURACY].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'text-indigo-400 bg-indigo-400/5' : 'text-white/40 hover:text-white'}`}>
-                {tab}
+                {tab === TabType.COMPARE ? 'Compare Matrix' : tab}
               </button>
             ))}
           </div>
@@ -672,6 +824,17 @@ export default function App() {
                 <span className="text-[10px] font-black text-white">${balance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
              </div>
           </div>
+          {isLoggedIn ? (
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600/20 rounded-full border border-indigo-500/30">
+               <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+               <span className="text-[9px] font-black text-indigo-400 uppercase">Live Node</span>
+            </div>
+          ) : (
+            <button onClick={handleLogin} className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all">
+               <Lock size={12} className="text-white/40" />
+               <span className="text-[9px] font-black text-white/60 uppercase">Connect Account</span>
+            </button>
+          )}
           <button onClick={() => setIsCommunityModalOpen(true)} className="p-2.5 rounded-full text-white/40 hover:text-indigo-400 hover:bg-white/5 transition-all">
             <Share2 size={18}/>
           </button>
@@ -687,8 +850,10 @@ export default function App() {
               <span className="font-black text-xl tracking-tighter uppercase italic">Terminal</span>
               <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-white/40"><X size={24}/></button>
             </div>
-            {[TabType.HOME, TabType.PLATFORMS, TabType.ODDS, TabType.ACCURACY].map(tab => (
-              <button key={tab} onClick={() => { setActiveTab(tab); setIsMobileMenuOpen(false); }} className={`text-2xl font-black uppercase italic text-left tracking-tighter ${activeTab === tab ? 'text-indigo-400' : 'text-white/40'}`}>{tab}</button>
+            {[TabType.HOME, TabType.PLATFORMS, TabType.ODDS, TabType.COMPARE, TabType.ACCURACY].map(tab => (
+              <button key={tab} onClick={() => { setActiveTab(tab); setIsMobileMenuOpen(false); }} className={`text-2xl font-black uppercase italic text-left tracking-tighter ${activeTab === tab ? 'text-indigo-400' : 'text-white/40'}`}>
+                {tab === TabType.COMPARE ? 'Compare Matrix' : tab}
+              </button>
             ))}
             <div className="mt-auto space-y-4">
                <div className="p-6 bg-white/5 rounded-2xl border border-white/10">
@@ -805,6 +970,10 @@ export default function App() {
 
           {activeTab === TabType.ACCURACY && (
             <motion.div key="accuracy" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><AccuracyLeaderboard /></motion.div>
+          )}
+
+          {activeTab === TabType.COMPARE && (
+            <motion.div key="compare" initial={{ opacity: 0 }} animate={{ opacity: 1 }}><PlatformComparisonMatrix /></motion.div>
           )}
         </AnimatePresence>
       </main>

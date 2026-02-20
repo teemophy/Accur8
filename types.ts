@@ -5,7 +5,8 @@ export enum TabType {
   ODDS = 'odds',
   ACCURACY = 'accuracy',
   SEARCH = 'search',
-  DASHBOARD = 'dashboard'
+  DASHBOARD = 'dashboard',
+  COMPARE = 'compare'
 }
 
 export interface Platform {

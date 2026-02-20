@@ -1,5 +1,5 @@
 {
-  "name": "PredictHub Terminal",
-  "description": "A high-density, professional trading terminal for prediction market aggregation, featuring real-time arbitrage detection, cross-platform consensus engines, and AI-powered sentiment analysis.",
+  "name": "PredictHub Terminal Pro",
+  "description": "A professional-grade prediction market terminal with real-time data from Polymarket, AI-powered sentiment analysis with Google Search grounding, and global user authentication.",
   "requestFramePermissions": []
 }

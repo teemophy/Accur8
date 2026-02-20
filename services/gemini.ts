@@ -41,6 +41,9 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
     });
     return response.text || "Scanning for market deals...";
   } catch (err) {
