@@ -32,10 +32,10 @@ export async function getGeminiMarketAnalysis(markets: Market[]): Promise<string
     
     REQUIRED OUTPUT STRUCTURE:
     [BEST PLATFORM RECOMMENDATIONS]
-    Identify the 3 markets with the most significant price gaps. For each, explicitly state: "BEST BUY: [Platform Name]" and explain why it's the superior choice for that specific bet.
+    Identify the 3 markets with the most significant price gaps. Even a 1% difference matters. For each, explicitly state: "BEST BUY: [Platform Name]" and explain why it's the superior choice (e.g., "Saves you $10 per $1000 bet").
     
     [ARBITRAGE ALERTS]
-    Are there any markets where the price difference is >5%? If so, flag them as "URGENT OPPORTUNITIES" and tell the user how much they save by switching platforms.
+    Highlight any market where the price difference is >2%. Flag them as "OPPORTUNITIES" and calculate the exact percentage savings.
     
     [PLATFORM QUALITY VERDICT]
     Based on the current volume and prices, which platform is currently the "Market Leader" for accuracy?

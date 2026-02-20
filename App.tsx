@@ -236,12 +236,13 @@ const LiveOddsFeed = ({ markets, onMarketClick, watchlist, onWatch }: { markets:
                  <div className="flex justify-center gap-1.5">
                     {Object.entries(m.prices).map(([p, v]) => {
                       const isBest = v === Math.min(...Object.values(m.prices).filter((val): val is number => val !== undefined));
+                      const platformName = p.charAt(0).toUpperCase() + p.slice(1);
                       return (
-                        <div key={p} className={`relative w-8 h-8 rounded-lg border flex flex-col items-center justify-center transition-all ${isBest ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
-                          <span className={`text-[8px] font-black uppercase leading-none ${isBest ? 'text-indigo-400' : 'text-white/40'}`}>{p[0]}</span>
-                          <span className={`text-[10px] font-bold mt-0.5 ${isBest ? 'text-white' : 'text-white/60'}`}>{v}%</span>
+                        <div key={p} className={`relative px-2 py-1 rounded-lg border flex flex-col items-center justify-center transition-all ${isBest ? 'bg-indigo-500/20 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
+                          <span className={`text-[7px] font-black uppercase leading-none mb-1 ${isBest ? 'text-indigo-400' : 'text-white/40'}`}>{platformName}</span>
+                          <span className={`text-[10px] font-bold ${isBest ? 'text-white' : 'text-white/60'}`}>{v}%</span>
                           {isBest && (
-                            <div className="absolute -top-2 -right-2 bg-indigo-500 text-[6px] font-black px-1 py-0.5 rounded shadow-lg animate-pulse">BEST</div>
+                            <div className="absolute -top-2 -right-1 bg-indigo-500 text-[5px] font-black px-1 py-0.5 rounded shadow-lg animate-pulse">BEST</div>
                           )}
                         </div>
                       );

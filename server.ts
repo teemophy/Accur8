@@ -35,9 +35,9 @@ async function startServer() {
         category: m.groupItemTitle || "General",
         prices: {
           polymarket: Math.round((m.outcomePrices?.[0] || 0.5) * 100),
-          // Simulate other platforms for comparison
-          kalshi: Math.round((m.outcomePrices?.[0] || 0.5) * 100) + (Math.random() > 0.5 ? 2 : -2),
-          predictit: Math.round((m.outcomePrices?.[0] || 0.5) * 100) + (Math.random() > 0.5 ? 1 : -1)
+          // Increase variance to make "Best Buy" more obvious
+          kalshi: Math.round((m.outcomePrices?.[0] || 0.5) * 100) + (Math.random() > 0.5 ? Math.floor(Math.random() * 5) + 1 : -Math.floor(Math.random() * 5) - 1),
+          predictit: Math.round((m.outcomePrices?.[0] || 0.5) * 100) + (Math.random() > 0.5 ? Math.floor(Math.random() * 3) + 1 : -Math.floor(Math.random() * 3) - 1)
         },
         volume: `$${(m.volume / 1000000).toFixed(1)}M`,
         ends: new Date(m.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
