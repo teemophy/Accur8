@@ -29,7 +29,7 @@ async function startServer() {
       const data = await response.json();
       
       // Map Polymarket data to our Market type
-      const markets = data.map((m: any) => ({
+      const markets = data.map((m: { id: string; question: string; groupItemTitle: string; outcomePrices: number[]; volume: number; endDate: string }) => ({
         id: m.id,
         question: m.question,
         category: m.groupItemTitle || "General",

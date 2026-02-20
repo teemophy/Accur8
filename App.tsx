@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Search, TrendingUp, Activity, BarChart3, 
+  Search, TrendingUp, Activity, 
   Zap, History, Sparkles, CheckCircle2,
-  X, ExternalLink, Filter, Globe, Shield, Link2, Code, BrainCircuit, Menu, ChevronRight, Send, Star, ArrowRight, Lock, Target, TrendingDown, MessageSquare, Clock, Share2, Twitter, Copy, Plus, Wallet, Eye, Info, Trash2, ArrowUpRight, ArrowDownRight, Layers
+  X, ExternalLink, Globe, Shield, Menu, ChevronRight, Star, Lock, Target, MessageSquare, Clock, Share2, Twitter, Copy, Plus, Wallet, Eye, Info, Trash2, ArrowUpRight, ArrowDownRight, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TabType, Market, Platform, Position } from './types';
-import { PLATFORMS, INITIAL_MARKETS, NEWS_FEED } from './constants';
+import { PLATFORMS, INITIAL_MARKETS } from './constants';
 import { getGeminiMarketAnalysis, getGeminiSpecificMarketDeepDive } from './services/gemini';
 
 // --- Utility: Sparkline Component ---
